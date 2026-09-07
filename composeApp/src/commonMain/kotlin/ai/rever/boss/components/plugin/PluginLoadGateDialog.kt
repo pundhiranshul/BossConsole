@@ -57,6 +57,7 @@ fun PluginLoadGateDialog(
     remedies: List<PluginLoadRemedy>,
     busy: Boolean,
     error: String?,
+    successMessage: String?,
     onDismiss: () -> Unit,
     onApply: (PluginLoadRemedy) -> Unit,
 ) {
@@ -93,6 +94,7 @@ fun PluginLoadGateDialog(
                 remedies = remedies,
                 busy = busy,
                 error = error,
+                successMessage = successMessage,
                 onDismiss = onDismiss,
                 onApply = onApply,
             )
@@ -106,6 +108,7 @@ private fun PluginLoadGateBody(
     remedies: List<PluginLoadRemedy>,
     busy: Boolean,
     error: String?,
+    successMessage: String?,
     onDismiss: () -> Unit,
     onApply: (PluginLoadRemedy) -> Unit,
 ) {
@@ -156,6 +159,22 @@ private fun PluginLoadGateBody(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
+
+        if (successMessage != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = successMessage,
+                fontSize = 13.sp,
+                color = BossTheme.colors.signalText,
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = onDismiss) {
+                    Text("Close", fontSize = 13.sp, color = BossTheme.colors.textSecondary)
+                }
+            }
+            return@Column
+        }
 
         if (error != null) {
             Spacer(modifier = Modifier.height(12.dp))
@@ -218,6 +237,7 @@ private fun PluginLoadGateActions(
             if (index > 0) Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = { onApply(remedy) },
+                enabled = !busy,
                 modifier = Modifier.fillMaxWidth(),
                 colors =
                     ButtonDefaults.buttonColors(
