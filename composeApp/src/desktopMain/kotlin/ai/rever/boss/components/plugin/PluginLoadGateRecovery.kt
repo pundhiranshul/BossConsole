@@ -153,17 +153,21 @@ internal object PluginLoadGateRecovery {
         val updater = UpdateManager.instance
         val state = updater.updateState.value
         
-        if (state is UpdateState.Downloading || state is UpdateState.ReadyToInstall) {
-            return Result.success("Downloading BOSS ${remedy.availableVersion}. The plugin loads after the restart.")
+        return when {
+            state is UpdateState.Downloading || state is UpdateState.ReadyToInstall -> {
+                val message = "Downloading BOSS ${remedy.availableVersion}. The plugin loads after the restart."
+                Result.success(message)
+            }
+            state is UpdateState.UpdateAvailable -> {
+                updater.downloadUpdateInBackground(state.updateInfo)
+                val message = "Downloading BOSS ${remedy.availableVersion}. The plugin loads after the restart."
+                Result.success(message)
+            }
+            else -> {
+                val errorMsg = "The update to ${remedy.availableVersion} is no longer available."
+                Result.failure(IllegalStateException(errorMsg))
+            }
         }
-        
-        val info =
-            (state as? UpdateState.UpdateAvailable)?.updateInfo
-                ?: return Result.failure(
-                    IllegalStateException("The update to ${remedy.availableVersion} is no longer available."),
-                )
-        updater.downloadUpdateInBackground(info)
-        return Result.success("Downloading BOSS ${remedy.availableVersion}. The plugin loads after the restart.")
     }
 
     /**
