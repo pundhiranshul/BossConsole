@@ -12,6 +12,8 @@ import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import ai.rever.boss.plugin.logging.BossLogger
+import ai.rever.boss.plugin.logging.LogCategory
 
 /**
  * HTTP client for the remote plugin store Edge Function.
@@ -534,6 +536,30 @@ object PluginStoreClient {
 
         return json.decodeFromString(response.bodyAsText())
     }
+
+    private val logger = BossLogger.forComponent("PluginStoreClient")
+
+    internal fun parseTimestamp(timestamp: String, pluginId: String? = null): Long {
+        if (timestamp.isBlank()) return 0L
+        return try {
+            // Normalize Postgres timestamp to strict ISO 8601
+            var isoString = timestamp.replace(" ", "T")
+            
+            // Supabase timestamps sometimes lack the 'Z' timezone indicator
+            if (!isoString.contains("Z") && isoString.indexOf('+', 10) == -1 && isoString.indexOf('-', 10) == -1) {
+                isoString += "Z"
+            }
+            
+            kotlinx.datetime.Instant.parse(isoString).toEpochMilliseconds()
+        } catch (e: Exception) {
+            logger.warn(
+                LogCategory.NETWORK,
+                "Failed to parse timestamp from store",
+                mapOf("timestamp" to timestamp, "pluginId" to (pluginId ?: "unknown"), "error" to (e.message ?: e.toString()))
+            )
+            0L
+        }
+    }
 }
 
 /**
@@ -609,6 +635,7 @@ data class PluginListItem(
             downloadCount = downloadCount,
             tags = tags,
             verified = verified,
+            publishedAt = PluginStoreClient.parseTimestamp(updatedAt, pluginId),
         )
 
     private fun parsePluginType(type: String): PluginType =
@@ -662,7 +689,7 @@ data class PluginDetailResponse(
             downloadCount = downloadCount,
             tags = tags,
             verified = verified,
-            publishedAt = parseTimestamp(updatedAt),
+            publishedAt = PluginStoreClient.parseTimestamp(updatedAt, pluginId),
         )
 
     private fun parsePluginType(type: String): PluginType =
@@ -671,16 +698,6 @@ data class PluginDetailResponse(
             "hybrid" -> PluginType.MIXED
             else -> PluginType.PANEL
         }
-
-    private fun parseTimestamp(timestamp: String): Long {
-        // Simple ISO timestamp parsing - return 0 if parsing fails
-        return try {
-            // Remove timezone info and parse
-            0L // TODO: Implement proper timestamp parsing if needed
-        } catch (_: Exception) {
-            0L
-        }
-    }
 }
 
 @Serializable
