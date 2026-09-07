@@ -11,6 +11,8 @@ import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
 import io.github.jan.supabase.realtime.postgresChangeFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -227,7 +229,14 @@ object SystemPluginManifestService {
         started = true
         onAdditions = onNewPluginsInstallable
 
-        scope.launch { refreshFromRemote() }
+        scope.launch {
+            val isReady = withTimeoutOrNull(30_000) { SupabaseConfig.isInitialized.first { it } }
+            if (isReady == null) {
+                logger.warn(LogCategory.NETWORK, "Supabase never initialized after 30s; proceeding without live sync")
+                return@launch
+            }
+            refreshFromRemote()
+        }
         subscribeToChanges()
     }
 
@@ -303,6 +312,15 @@ object SystemPluginManifestService {
 
     private fun subscribeToChanges() {
         scope.launch {
+            val isReady = withTimeoutOrNull(30_000) { SupabaseConfig.isInitialized.first { it } }
+            if (isReady == null) {
+                // Warning already logged in startSync
+                return@launch
+            }
+
+            // Note: The backoff loop below is now exclusively for network blips or channel drops
+            // post-initialization. It no longer handles the initial startup race since we guarantee
+            // the client is ready above.
             var backoffMs = 5_000L
             val maxBackoffMs = 60_000L
 
