@@ -551,11 +551,15 @@ object PluginStoreClient {
             }
             
             kotlinx.datetime.Instant.parse(isoString).toEpochMilliseconds()
-        } catch (e: Exception) {
+        } catch (e: IllegalArgumentException) {
             logger.warn(
                 LogCategory.NETWORK,
                 "Failed to parse timestamp from store",
-                mapOf("timestamp" to timestamp, "pluginId" to (pluginId ?: "unknown"), "error" to (e.message ?: e.toString()))
+                mapOf(
+                    "timestamp" to timestamp,
+                    "pluginId" to (pluginId ?: "unknown"),
+                    "error" to (e.message ?: e.toString()),
+                ),
             )
             0L
         }
