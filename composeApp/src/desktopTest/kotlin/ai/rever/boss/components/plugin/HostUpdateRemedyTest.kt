@@ -30,7 +30,10 @@ class HostUpdateRemedyTest {
     @Test
     fun `in-flight states acknowledge progress without starting another download`() {
         val downloading = applyHostUpdateRemedy(remedy, UpdateState.Downloading(0.5f)) { error("duplicate download") }
-        val ready = applyHostUpdateRemedy(remedy, UpdateState.ReadyToInstall("/tmp/BOSS.dmg")) { error("duplicate download") }
+        val ready =
+            applyHostUpdateRemedy(remedy, UpdateState.ReadyToInstall("/tmp/BOSS.dmg")) {
+                error("duplicate download")
+            }
         assertTrue(downloading.getOrThrow().contains("already downloading"))
         assertTrue(ready.getOrThrow().contains("ready to install"))
     }
@@ -52,8 +55,17 @@ class HostUpdateRemedyTest {
 
     @Test
     fun `update errors retain the actual failure reason`() {
-        val result = applyHostUpdateRemedy(remedy, UpdateState.Error("network failure")) { error("unexpected download") }
-        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("network failure"))
+        val result =
+            applyHostUpdateRemedy(remedy, UpdateState.Error("network failure")) {
+                error("unexpected download")
+            }
+        assertTrue(
+            result
+                .exceptionOrNull()
+                ?.message
+                .orEmpty()
+                .contains("network failure"),
+        )
     }
 
     @Test

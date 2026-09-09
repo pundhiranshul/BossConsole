@@ -78,8 +78,7 @@ fun PluginLoadGateHost(
                         .getOrElse { Result.failure(it) }
                         .onSuccess { msg ->
                             successMessage = msg
-                        }
-                        .onFailure { e ->
+                        }.onFailure { e ->
                             error = e.message ?: "Could not apply that fix."
                         }
                 } finally {

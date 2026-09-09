@@ -210,7 +210,11 @@ private fun PluginLoadGateActions(
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             TextButton(onClick = onDismiss) {
-                Text(if (remedies.isEmpty()) "Close" else "Not now", fontSize = 13.sp, color = BossTheme.colors.textSecondary)
+                Text(
+                    if (remedies.isEmpty()) "Close" else "Not now",
+                    fontSize = 13.sp,
+                    color = BossTheme.colors.textSecondary,
+                )
             }
         }
     }
