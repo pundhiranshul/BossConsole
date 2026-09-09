@@ -16,6 +16,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -245,8 +246,8 @@ object SystemPluginManifestService {
      * client, replaces a guaranteed-to-fail-once startup path with a wait for the real
      * precondition.
      */
-    internal suspend fun awaitSupabaseInitialized() {
-        SupabaseConfig.isInitialized.first { it }
+    internal suspend fun awaitSupabaseInitialized(initialized: StateFlow<Boolean> = SupabaseConfig.isInitialized) {
+        initialized.first { it }
     }
 
     // Block body, not expression body: the early `return`s inside withLock are
