@@ -539,6 +539,7 @@ object PluginStoreClient {
 
     private val logger = BossLogger.forComponent("PluginStoreClient")
 
+    /** Parses store dates as epoch milliseconds; offset-less legacy values use UTC, and unknown dates return zero. */
     internal fun parseTimestamp(
         timestamp: String,
         pluginId: String? = null,
@@ -702,7 +703,16 @@ data class PluginDetailResponse(
             downloadCount = downloadCount,
             tags = tags,
             verified = verified,
-            publishedAt = PluginStoreClient.parseTimestamp(updatedAt, pluginId),
+            // Admin metadata edits change updatedAt without publishing a new version.
+            // List responses lack version dates; details prefer the matching release when present.
+            publishedAt =
+                PluginStoreClient.parseTimestamp(
+                    versions
+                        .firstOrNull { it.version == latestVersion }
+                        ?.publishedAt
+                        ?.takeIf { it.isNotBlank() } ?: updatedAt,
+                    pluginId,
+                ),
         )
 
     private fun parsePluginType(type: String): PluginType =

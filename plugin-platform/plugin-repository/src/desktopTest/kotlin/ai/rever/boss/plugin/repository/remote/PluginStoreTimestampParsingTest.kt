@@ -1,5 +1,6 @@
 package ai.rever.boss.plugin.repository.remote
 
+import java.util.TimeZone
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -79,6 +80,47 @@ class PluginStoreTimestampParsingTest {
             assertEquals(0L, listItem(timestamp).toPluginInfo().publishedAt, timestamp)
         }
         assertEquals(0L, listItem().toPluginInfo().publishedAt)
+    }
+
+    @Test
+    fun `detail uses the matching release date instead of admin metadata update time`() {
+        val response =
+            responseWithUpdatedAt("2024-05-13T14:30:00Z").copy(
+                latestVersion = "2.0.0",
+                versions =
+                    listOf(
+                        VersionInfo(id = "older", version = "1.0.0", publishedAt = "2023-05-12T14:30:00Z"),
+                        VersionInfo(id = "latest", version = "2.0.0", publishedAt = "2024-05-12T14:30:00Z"),
+                    ),
+            )
+        assertEquals(1715524200000L, response.toPluginInfo().publishedAt)
+    }
+
+    @Test
+    fun `detail falls back to metadata time when the release date is unavailable`() {
+        val response = responseWithUpdatedAt("2024-05-12T14:30:00Z").copy(latestVersion = "2.0.0")
+        val versionLists =
+            listOf(
+                emptyList(),
+                listOf(VersionInfo(id = "older", version = "1.0.0", publishedAt = "2023-05-12T14:30:00Z")),
+                listOf(VersionInfo(id = "latest", version = "2.0.0", publishedAt = "")),
+            )
+        versionLists.forEach { versions ->
+            assertEquals(1715524200000L, response.copy(versions = versions).toPluginInfo().publishedAt)
+        }
+    }
+
+    @Test
+    fun `offset-less timestamps use UTC even on a non-UTC host`() {
+        val previous = TimeZone.getDefault()
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"))
+            val timestamp = "2024-05-12 14:30:00.123"
+            assertEquals(1715524200123L, responseWithUpdatedAt(timestamp).toPluginInfo().publishedAt)
+            assertEquals(1715524200123L, listItem(timestamp).toPluginInfo().publishedAt)
+        } finally {
+            TimeZone.setDefault(previous)
+        }
     }
 
     private fun listItem(updatedAt: String = "") =
