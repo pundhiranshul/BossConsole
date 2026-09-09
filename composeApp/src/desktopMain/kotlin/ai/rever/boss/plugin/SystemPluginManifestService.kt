@@ -236,20 +236,6 @@ object SystemPluginManifestService {
         subscribeToChanges()
     }
 
-    /**
-     * BossConsole#370: `startSync` used to run before `SupabaseConfig` finished its own async
-     * `initialize()` call in the Compose UI layer, so the startup fetch and the first
-     * subscribe attempt both hit `SupabaseConfig.client`'s "not initialized" throw - logged as a
-     * warning here and, for the subscription, driving an unnecessary first trip through
-     * [subscribeToChanges]'s backoff retry loop. `SupabaseConfig.isInitialized` already exists
-     * for exactly this; suspending here once, before either launched coroutine touches the
-     * client, replaces a guaranteed-to-fail-once startup path with a wait for the real
-     * precondition.
-     */
-    internal suspend fun awaitSupabaseInitialized(initialized: StateFlow<Boolean> = SupabaseConfig.isInitialized) {
-        initialized.first { it }
-    }
-
     // Block body, not expression body: the early `return`s inside withLock are
     // non-local returns from this function, which Kotlin 2.5 forbids in
     // expression-bodied functions without an explicit return type (KTLC-288).
@@ -340,9 +326,8 @@ object SystemPluginManifestService {
                     backoffMs = 5_000L
                     logger.info(LogCategory.NETWORK, "Subscribed to system_plugins changes")
 
-                    // Catch up on (re)connect: the startup fetch can lose the
-                    // race with SupabaseConfig initialization, and changes can
-                    // land while the subscription was down.
+                    // Catch up on (re)connect: changes can land before subscription
+                    // or while the subscription was down.
                     refreshFromRemote()
 
                     changeFlow.collect {
@@ -419,4 +404,9 @@ object SystemPluginManifestService {
             )
         }
     }
+}
+
+/** Suspend startup work until the client is ready, including an offline boot with late initialization. */
+internal suspend fun awaitSupabaseInitialized(initialized: StateFlow<Boolean> = SupabaseConfig.isInitialized) {
+    initialized.first { it }
 }
