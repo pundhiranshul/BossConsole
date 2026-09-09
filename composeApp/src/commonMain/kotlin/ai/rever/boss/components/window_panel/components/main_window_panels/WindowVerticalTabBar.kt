@@ -1,5 +1,4 @@
 package ai.rever.boss.components.window_panel.components.main_window_panels
-
 import ai.rever.boss.components.bars.vertical.VerticalBar
 import ai.rever.boss.components.model.TabDraggableComponent
 import ai.rever.boss.components.model.TabDropResult
@@ -14,11 +13,19 @@ import ai.rever.boss.window.MenuActionsHandler
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListLayoutInfo
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -173,6 +180,7 @@ fun rememberWindowTabGroups(
  * @param registerBounds false for a hover-revealed drawer, whose coordinates belong to another
  *   window entirely and would overwrite the real bar's.
  */
+@Suppress("detekt.LongMethod")
 @Composable
 fun WindowVerticalTabBar(
     groups: List<TabBarGroup>,
@@ -224,6 +232,7 @@ fun WindowVerticalTabBar(
      * With two slots each branch is handed only its own layout, so there is nothing to get wrong.
      */
     belowTabs: @Composable () -> Unit = {},
+    drawerIconColumn: @Composable () -> Unit = {},
 ) {
     // The pane the user is working in owns the bar's shared chrome: its bar menu, its Favorites
     // shelf, and where a favourite opens. Falling back to the first group keeps every one of
@@ -275,6 +284,16 @@ fun WindowVerticalTabBar(
                 onExpand = { onToggleCollapse?.invoke() },
                 onNewTab = lead.state.openNewTab,
                 belowTabs = belowTabs,
+                favoritesSpacer = {
+                    Box(Modifier.requiredWidth(width)) {
+                        WindowTabBarFavorites(
+                            lead = lead,
+                            onToggleCollapse = onToggleCollapse ?: {},
+                            onPin = onPin,
+                            tabDragComponent = null,
+                        )
+                    }
+                },
             )
         } else {
             ExpandedGroups(
@@ -287,6 +306,7 @@ fun WindowVerticalTabBar(
                 tabDragComponent = tabDragComponent.takeIf { registerBounds },
                 footer = footer,
                 belowMap = belowMap,
+                drawerIconColumn = drawerIconColumn,
                 zoomed = zoomed,
                 onExitZoom = onExitZoom,
             )
@@ -337,6 +357,7 @@ fun BoxScope.WindowRevealedTabBarDrawer(
      */
     footer: @Composable () -> Unit = {},
     belowMap: @Composable () -> Unit = {},
+    drawerIconColumn: @Composable () -> Unit = {},
 ) {
     // Built here rather than taken as a parameter: dismissing a drawer is the drawer's own
     // business, and the pointer state it needs is a composable read the caller had to make on the
@@ -390,6 +411,7 @@ fun BoxScope.WindowRevealedTabBarDrawer(
             registerBounds = false,
             footer = footer,
             belowMap = belowMap,
+            drawerIconColumn = drawerIconColumn,
             // The drawer is a second bar, and a bar with no idea a pane is zoomed draws its map
             // as an ordinary arrangement: no signal border, no "Exit Full Screen" across it, and
             // nothing clickable. On a COLLAPSED bar the drawer is the only map there is, so that
@@ -461,6 +483,7 @@ private fun ExpandedGroups(
     tabDragComponent: TabDraggableComponent?,
     footer: @Composable () -> Unit,
     belowMap: @Composable () -> Unit,
+    drawerIconColumn: @Composable () -> Unit,
     zoomed: Boolean,
     onExitZoom: () -> Unit,
 ) {
@@ -474,6 +497,11 @@ private fun ExpandedGroups(
             onPin = onPin,
             tabDragComponent = tabDragComponent,
         )
+
+        // 10.dp (rather than 11.dp) compensates for a 1.dp optical alignment difference
+        // between the collapsed rail's internal structure and the expanded drawer's structure,
+        // so the expanded New Tab row coincides perfectly with the rail's '+' button during the transition.
+        Spacer(Modifier.height(10.dp))
 
         BossVerticalTabStrip(
             listState = listState,
@@ -515,11 +543,21 @@ private fun ExpandedGroups(
 
         // Everything below the strip is pinned to the foot of the bar, because the strip above
         // takes weight(1f) and this is what is left.
-        footer()
+        Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)) {
+            Box(Modifier.width(tabBarRailWidth).fillMaxHeight()) {
+                drawerIconColumn()
+            }
+            Column(Modifier.weight(1f).fillMaxHeight()) {
+                Divider(color = BossTheme.colors.line) // Ensure a top divider exists across the row's top
+                footer()
 
-        // The one place that shows the whole arrangement at once, which is what makes a four-way
-        // split legible rather than a run of headers to read in order.
-        SplitMap(groups = groups, zoomed = zoomed, onExitZoom = onExitZoom)
+                // The one place that shows the whole arrangement at once, which is what makes a four-way
+                // split legible rather than a run of headers to read in order.
+                SplitMap(groups = groups, zoomed = zoomed, onExitZoom = onExitZoom)
+            }
+        }
+
+        // Render belowMap spanning the entire width underneath both columns.
         belowMap()
     }
 }

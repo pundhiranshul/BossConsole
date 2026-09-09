@@ -15,6 +15,7 @@ import ai.rever.boss.plugin.api.Panel.Companion.top
 import ai.rever.boss.plugin.ui.BossTheme
 import ai.rever.boss.services.supabase.AuthService
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Row
@@ -302,7 +303,7 @@ internal fun focusQuickActionsRail(
         onShowSearch = onShowSearch,
         onSignOut = onSignOut,
         toolbox = toolbox,
-    )
+    ).filterNotNull()
 
 /** One rail icon, matching what `DraggableSidebarSection` gives the plugin icons above it. */
 internal val SIDEBAR_ICON_SIZE = 32.dp
@@ -414,20 +415,35 @@ internal fun focusQuickActionButtons(
      * [FOCUS_QUICK_ACTION_COUNT] - and so the rail's reserve - correct.
      */
     toolLauncher: (@Composable (hintDirection: Panel, modifier: Modifier) -> Unit)? = null,
-): List<@Composable () -> Unit> =
-    listOfNotNull(
+    signOutInteractionSource: MutableInteractionSource? = null,
+): List<(@Composable () -> Unit)?> =
+    listOf(
         {
             // The only one of the three that reads auth state, and it reads it here rather than in
             // either host so that neither recomposes when the signed-in address changes.
             val currentUser by AuthService.currentUser.collectAsState()
-            BossActionButton(
-                imageVector = Icons.AutoMirrored.Outlined.Logout,
-                text = "Sign Out",
-                modifier = modifier,
-                hintText = signOutHint(currentUser?.email),
-                hintDirection = hintDirection,
-                onClick = onSignOut,
-            )
+            // If an interaction source is provided, use it; otherwise use the default
+            // one created inside BossActionButton
+            if (signOutInteractionSource != null) {
+                BossActionButton(
+                    imageVector = Icons.AutoMirrored.Outlined.Logout,
+                    text = "Sign Out",
+                    modifier = modifier,
+                    hintText = signOutHint(currentUser?.email),
+                    hintDirection = hintDirection,
+                    interactionSource = signOutInteractionSource,
+                    onClick = onSignOut,
+                )
+            } else {
+                BossActionButton(
+                    imageVector = Icons.AutoMirrored.Outlined.Logout,
+                    text = "Sign Out",
+                    modifier = modifier,
+                    hintText = signOutHint(currentUser?.email),
+                    hintDirection = hintDirection,
+                    onClick = onSignOut,
+                )
+            }
         },
         {
             BossActionButton(
@@ -666,7 +682,7 @@ private fun QuickActions(
                 onShowSearch = onShowSearch,
                 onSignOut = onSignOut,
                 toolLauncher = toolLauncher,
-            ).forEach { action -> action() }
+            ).filterNotNull().forEach { action -> action() }
         }
     }
 }
