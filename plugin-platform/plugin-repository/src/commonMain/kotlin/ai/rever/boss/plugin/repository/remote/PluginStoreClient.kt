@@ -1,6 +1,8 @@
 package ai.rever.boss.plugin.repository.remote
 
 import ai.rever.boss.plugin.api.PluginType
+import ai.rever.boss.plugin.logging.BossLogger
+import ai.rever.boss.plugin.logging.LogCategory
 import ai.rever.boss.plugin.repository.PluginInfo
 import ai.rever.boss.plugin.repository.PluginSearchFilter
 import ai.rever.boss.plugin.repository.PluginSearchResult
@@ -12,8 +14,6 @@ import io.ktor.http.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import ai.rever.boss.plugin.logging.BossLogger
-import ai.rever.boss.plugin.logging.LogCategory
 
 /**
  * HTTP client for the remote plugin store Edge Function.
@@ -539,18 +539,27 @@ object PluginStoreClient {
 
     private val logger = BossLogger.forComponent("PluginStoreClient")
 
-    internal fun parseTimestamp(timestamp: String, pluginId: String? = null): Long {
+    internal fun parseTimestamp(
+        timestamp: String,
+        pluginId: String? = null,
+    ): Long {
         if (timestamp.isBlank()) return 0L
         return try {
             // Normalize Postgres timestamp to strict ISO 8601
-            var isoString = timestamp.replace(" ", "T")
-            
-            // Supabase timestamps sometimes lack the 'Z' timezone indicator
-            if (!isoString.contains("Z") && isoString.indexOf('+', 10) == -1 && isoString.indexOf('-', 10) == -1) {
+            var isoString = timestamp.trim().replace(" ", "T")
+
+            // Treat legacy timestamps without an offset as UTC, independent of the host timezone.
+            if (
+                !isoString.endsWith("Z", ignoreCase = true) &&
+                isoString.indexOf('+', 10) == -1 &&
+                isoString.indexOf('-', 10) == -1
+            ) {
                 isoString += "Z"
             }
-            
-            kotlinx.datetime.Instant.parse(isoString).toEpochMilliseconds()
+
+            kotlinx.datetime.Instant
+                .parse(isoString)
+                .toEpochMilliseconds()
         } catch (e: IllegalArgumentException) {
             logger.warn(
                 LogCategory.NETWORK,

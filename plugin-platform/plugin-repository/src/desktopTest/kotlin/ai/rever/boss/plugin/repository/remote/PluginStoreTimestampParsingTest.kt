@@ -53,4 +53,44 @@ class PluginStoreTimestampParsingTest {
 
         assertEquals(0L, info.publishedAt)
     }
+
+    @Test
+    fun `list and detail conversions preserve offsets and fractional precision`() {
+        val timestamps =
+            listOf(
+                "2024-05-12T14:30:00.123456789Z",
+                "2024-05-12T20:00:00.123456789+05:30",
+                "2024-05-12T07:30:00.123456789-07:00",
+                "2024-05-12 14:30:00.123456789+00",
+                "2024-05-12 14:30:00.123456789",
+                "2024-05-12t14:30:00.123456789z",
+                " 2024-05-12T14:30:00.123456789Z ",
+            )
+        timestamps.forEach { timestamp ->
+            assertEquals(1715524200123L, responseWithUpdatedAt(timestamp).toPluginInfo().publishedAt, timestamp)
+            assertEquals(1715524200123L, listItem(timestamp).toPluginInfo().publishedAt, timestamp)
+        }
+    }
+
+    @Test
+    fun `invalid calendar values and absent dates fall back in both conversions`() {
+        listOf("", "   ", "not-a-timestamp", "2024-02-30T14:30:00Z", "2024-05-12T14:30:00+25:00").forEach { timestamp ->
+            assertEquals(0L, responseWithUpdatedAt(timestamp).toPluginInfo().publishedAt, timestamp)
+            assertEquals(0L, listItem(timestamp).toPluginInfo().publishedAt, timestamp)
+        }
+        assertEquals(0L, listItem().toPluginInfo().publishedAt)
+    }
+
+    private fun listItem(updatedAt: String = "") =
+        PluginListItem(
+            id = "example",
+            pluginId = "ai.rever.boss.plugin.dynamic.example",
+            displayName = "Example",
+            description = "",
+            author = "RISA Labs",
+            type = "tab",
+            apiVersion = "1.0",
+            verified = true,
+            updatedAt = updatedAt,
+        )
 }
