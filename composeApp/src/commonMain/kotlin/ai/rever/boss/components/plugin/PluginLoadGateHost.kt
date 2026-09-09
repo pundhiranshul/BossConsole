@@ -64,7 +64,8 @@ fun PluginLoadGateHost(
             // the right cadence for something this consequential.
             PluginLoadGateRegistry.clear(gate.pluginId)
         },
-        onApply = { remedy ->
+        onApply = apply@{ remedy ->
+            if (busy || successMessage != null) return@apply
             busy = true
             error = null
             successMessage = null

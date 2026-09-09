@@ -151,23 +151,7 @@ internal object PluginLoadGateRecovery {
      */
     private suspend fun updateHost(remedy: PluginLoadRemedy.UpdateHost): Result<String> {
         val updater = UpdateManager.instance
-        val state = updater.updateState.value
-        
-        return when {
-            state is UpdateState.Downloading || state is UpdateState.ReadyToInstall -> {
-                val message = "Downloading BOSS ${remedy.availableVersion}. The plugin loads after the restart."
-                Result.success(message)
-            }
-            state is UpdateState.UpdateAvailable -> {
-                updater.downloadUpdateInBackground(state.updateInfo)
-                val message = "Downloading BOSS ${remedy.availableVersion}. The plugin loads after the restart."
-                Result.success(message)
-            }
-            else -> {
-                val errorMsg = "The update to ${remedy.availableVersion} is no longer available."
-                Result.failure(IllegalStateException(errorMsg))
-            }
-        }
+        return applyHostUpdateRemedy(remedy, updater.updateState.value, updater::downloadUpdateInBackground)
     }
 
     /**

@@ -271,3 +271,53 @@ internal fun remedyLabel(remedy: PluginLoadRemedy): String =
 
         is PluginLoadRemedy.NothingAvailable -> remedy.reason
     }
+
+@Composable
+private fun PluginLoadGateHeader(gate: PluginLoadGate) {
+    Text(
+        text = "${gate.displayName} could not be loaded",
+        fontSize = 18.sp,
+        fontWeight = FontWeight.Bold,
+        color = BossTheme.colors.textPrimary,
+        // The display name falls back to the plugin id, which comes from a manifest. Clamped
+        // so a crafted one cannot grow the dialog or run on into something that reads like our
+        // own copy.
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+    )
+
+    Spacer(modifier = Modifier.height(10.dp))
+
+    Text(
+        text =
+            when (gate) {
+                is PluginLoadGate.NeedsNewerHost -> {
+                    "It needs BOSS ${gate.required} or later. This is ${gate.current}."
+                }
+
+                is PluginLoadGate.NeedsNewerApi -> {
+                    "It needs plugin API ${gate.required} or later. The installed API layer is ${gate.current}."
+                }
+
+                is PluginLoadGate.SignatureRejected -> {
+                    // Says what is wrong with the FILE, not with a version, and does not
+                    // accuse: the ordinary cause is a jar replaced by hand during development,
+                    // not an attack. The verifier's own reason is shown below.
+                    "The installed file does not match the signature the store recorded for " +
+                        "it, so it was not loaded."
+                }
+            },
+        fontSize = 13.sp,
+        color = BossTheme.colors.textSecondary,
+    )
+
+    Spacer(modifier = Modifier.height(6.dp))
+
+    Text(
+        text = gate.pluginId,
+        fontSize = 11.sp,
+        color = BossTheme.colors.textMuted,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+    )
+}
