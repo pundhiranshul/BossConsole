@@ -21,7 +21,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -230,14 +229,24 @@ object SystemPluginManifestService {
         onAdditions = onNewPluginsInstallable
 
         scope.launch {
-            val isReady = withTimeoutOrNull(30_000) { SupabaseConfig.isInitialized.first { it } }
-            if (isReady == null) {
-                logger.warn(LogCategory.NETWORK, "Supabase never initialized after 30s; proceeding without live sync")
-                return@launch
-            }
+            awaitSupabaseInitialized()
             refreshFromRemote()
         }
         subscribeToChanges()
+    }
+
+    /**
+     * BossConsole#370: `startSync` used to run before `SupabaseConfig` finished its own async
+     * `initialize()` call in the Compose UI layer, so the startup fetch and the first
+     * subscribe attempt both hit `SupabaseConfig.client`'s "not initialized" throw - logged as a
+     * warning here and, for the subscription, driving an unnecessary first trip through
+     * [subscribeToChanges]'s backoff retry loop. `SupabaseConfig.isInitialized` already exists
+     * for exactly this; suspending here once, before either launched coroutine touches the
+     * client, replaces a guaranteed-to-fail-once startup path with a wait for the real
+     * precondition.
+     */
+    internal suspend fun awaitSupabaseInitialized() {
+        SupabaseConfig.isInitialized.first { it }
     }
 
     // Block body, not expression body: the early `return`s inside withLock are
@@ -312,15 +321,8 @@ object SystemPluginManifestService {
 
     private fun subscribeToChanges() {
         scope.launch {
-            val isReady = withTimeoutOrNull(30_000) { SupabaseConfig.isInitialized.first { it } }
-            if (isReady == null) {
-                // Warning already logged in startSync
-                return@launch
-            }
+            awaitSupabaseInitialized()
 
-            // Note: The backoff loop below is now exclusively for network blips or channel drops
-            // post-initialization. It no longer handles the initial startup race since we guarantee
-            // the client is ready above.
             var backoffMs = 5_000L
             val maxBackoffMs = 60_000L
 

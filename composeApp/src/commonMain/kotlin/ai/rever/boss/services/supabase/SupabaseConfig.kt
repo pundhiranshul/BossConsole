@@ -26,8 +26,8 @@ object SupabaseConfig {
     private val _isInitialized = MutableStateFlow(false)
 
     /**
-     * Emits `true` when the Supabase client is ready. 
-     * Note: This is not a one-way latch; it will transition back to `false` if [clear] is called 
+     * Emits `true` when the Supabase client is ready.
+     * Note: This is not a one-way latch; it will transition back to `false` if [clear] is called
      * (e.g. on logout/teardown). One-shot startup tasks waiting on this should be aware of this semantic.
      */
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
