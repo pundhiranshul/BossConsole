@@ -43,15 +43,35 @@ class HostUpdateRemedyTest {
     }
 
     @Test
+    fun `installation states do not falsely report an unavailable update`() {
+        val installing = applyHostUpdateRemedy(remedy, UpdateState.Installing) { error("duplicate download") }
+        val restart = applyHostUpdateRemedy(remedy, UpdateState.RestartRequired) { error("duplicate download") }
+        assertTrue(installing.getOrThrow().contains("installing"))
+        assertTrue(restart.getOrThrow().contains("Restart BOSS"))
+    }
+
+    @Test
+    fun `update errors retain the actual failure reason`() {
+        val result = applyHostUpdateRemedy(remedy, UpdateState.Error("network failure")) { error("unexpected download") }
+        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("network failure"))
+    }
+
+    @Test
+    fun `starting an update retains rollback but removes the repeated update action`() {
+        val rollback = PluginLoadRemedy.RevertPlugin("1.0.0")
+        val remedies = listOf(remedy, rollback)
+        assertEquals(remedies, remainingLoadRemedies(remedies, updateStarted = false))
+        assertEquals(listOf(rollback), remainingLoadRemedies(remedies, updateStarted = true))
+        assertTrue(remainingLoadRemedies(listOf(remedy), updateStarted = true).isEmpty())
+    }
+
+    @Test
     fun `unavailable states remain failures and never start downloads`() {
         val states =
             listOf(
                 UpdateState.Idle,
                 UpdateState.CheckingForUpdates,
                 UpdateState.UpToDate,
-                UpdateState.Installing,
-                UpdateState.RestartRequired,
-                UpdateState.Error("network failure"),
             )
         states.forEach { state ->
             assertTrue(applyHostUpdateRemedy(remedy, state) { error("unexpected download") }.isFailure, "$state")

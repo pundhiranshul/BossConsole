@@ -65,7 +65,7 @@ fun PluginLoadGateHost(
             PluginLoadGateRegistry.clear(gate.pluginId)
         },
         onApply = apply@{ remedy ->
-            if (busy || successMessage != null) return@apply
+            if (busy || (successMessage != null && remedy is PluginLoadRemedy.UpdateHost)) return@apply
             busy = true
             error = null
             successMessage = null

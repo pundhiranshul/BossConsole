@@ -49,6 +49,7 @@ import androidx.compose.ui.window.DialogProperties
  *
  * @param busy true while a remedy is being applied, so the dialog stays put and says what is
  *   happening rather than vanishing and leaving a user to guess whether it worked
+ * @param successMessage confirmation of a started update; other remedies stay available
  * @param error a failure from the last attempt, kept on screen instead of dismissing the dialog
  */
 @Composable
@@ -122,13 +123,6 @@ private fun PluginLoadGateBody(
                 fontSize = 13.sp,
                 color = BossTheme.colors.signalText,
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                TextButton(onClick = onDismiss) {
-                    Text("Close", fontSize = 13.sp, color = BossTheme.colors.textSecondary)
-                }
-            }
-            return@Column
         }
 
         if (error != null) {
@@ -145,7 +139,7 @@ private fun PluginLoadGateBody(
         Spacer(modifier = Modifier.height(20.dp))
 
         PluginLoadGateActions(
-            remedies = remedies,
+            remedies = remainingLoadRemedies(remedies, updateStarted = successMessage != null),
             busy = busy,
             onDismiss = onDismiss,
             onApply = onApply,
@@ -192,7 +186,6 @@ private fun PluginLoadGateActions(
             if (index > 0) Spacer(modifier = Modifier.height(8.dp))
             Button(
                 onClick = { onApply(remedy) },
-                enabled = !busy,
                 modifier = Modifier.fillMaxWidth(),
                 colors =
                     ButtonDefaults.buttonColors(
@@ -217,7 +210,7 @@ private fun PluginLoadGateActions(
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
             TextButton(onClick = onDismiss) {
-                Text("Not now", fontSize = 13.sp, color = BossTheme.colors.textSecondary)
+                Text(if (remedies.isEmpty()) "Close" else "Not now", fontSize = 13.sp, color = BossTheme.colors.textSecondary)
             }
         }
     }
@@ -321,3 +314,9 @@ private fun PluginLoadGateHeader(gate: PluginLoadGate) {
         overflow = TextOverflow.Ellipsis,
     )
 }
+
+/** A background host update must not take the immediate rollback option away. */
+internal fun remainingLoadRemedies(
+    remedies: List<PluginLoadRemedy>,
+    updateStarted: Boolean,
+): List<PluginLoadRemedy> = if (updateStarted) remedies.filterNot { it is PluginLoadRemedy.UpdateHost } else remedies
