@@ -23,7 +23,9 @@ internal fun applyHostUpdateRemedy(
         is UpdateState.UpdateAvailable -> {
             if (state.updateInfo.latestVersion.toString() == remedy.availableVersion) {
                 download(state.updateInfo)
-                Result.success("Downloading BOSS ${remedy.availableVersion}. The plugin loads after the restart.")
+                Result.success(
+                    "Downloading BOSS ${remedy.availableVersion}. When it is ready, install it from the update banner and restart BOSS.",
+                )
             } else {
                 Result.failure(IllegalStateException("The offered BOSS update changed. Check the update banner."))
             }
