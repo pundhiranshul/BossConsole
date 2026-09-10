@@ -761,12 +761,7 @@ internal fun BossAppScaffold(
                             },
                             onDrawerVisibleChange = { visible -> drawerVisible = visible },
                             onBarRailedChange = { railed -> barRailed = railed },
-                            verticalBarBelowMap = {
-                                LogoutFullRow(
-                                    onSignOut = { state.showLogoutDialog = true },
-                                    interactionSource = drawerSignOutInteractionSource,
-                                )
-                            },
+                            verticalBarBelowMap = {},
                             // The rail's own layout for the same actions, in its OWN slot: the
                             // rail and the hover drawer are on screen together, so a slot handed
                             // to both drew these twice - see `WindowVerticalTabBar.belowTabs`.
@@ -801,10 +796,9 @@ internal fun BossAppScaffold(
                                         toolLauncher = hostToolLauncher,
                                         signOutInteractionSource = drawerSignOutInteractionSource,
                                     )
-                                // The sign out button (index 0) is omitted from the icon column
-                                // because it is rendered as a full-width row underneath both columns.
-                                val actionsWithoutSignOut = actions.toMutableList().apply { set(0, null) }
-                                DrawerIconColumn(actions = actionsWithoutSignOut)
+                                // We pass the full actions list here, including Sign Out at index 0,
+                                // so the expanded drawer matches the collapsed rail exactly.
+                                DrawerIconColumn(actions = actions)
                             },
                             verticalBarFooter = {
                                 VerticalBarWindowControls(

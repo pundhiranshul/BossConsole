@@ -10,6 +10,7 @@ import ai.rever.boss.utils.logging.BossLogger
 import ai.rever.boss.utils.logging.LogCategory
 import ai.rever.boss.window.LocalWindowId
 import ai.rever.boss.window.MenuActionsHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.hoverable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsHoveredAsState
@@ -543,9 +544,15 @@ private fun ExpandedGroups(
 
         // Everything below the strip is pinned to the foot of the bar, because the strip above
         // takes weight(1f) and this is what is left.
+        // Exactly match the rail's 6dp spacer before its action cluster, so the icons don't jump on expansion.
+        Spacer(Modifier.height(6.dp))
         Row(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max)) {
             Box(Modifier.width(tabBarRailWidth).fillMaxHeight()) {
-                drawerIconColumn()
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Match the rail's 60% width divider to connect seamlessly with the right column's full divider
+                    Box(Modifier.fillMaxWidth(0.6f).height(1.dp).background(BossTheme.colors.line))
+                    drawerIconColumn()
+                }
             }
             Column(Modifier.weight(1f).fillMaxHeight()) {
                 Divider(color = BossTheme.colors.line) // Ensure a top divider exists across the row's top

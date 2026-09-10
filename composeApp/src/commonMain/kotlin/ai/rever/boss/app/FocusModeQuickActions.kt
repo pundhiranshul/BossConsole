@@ -348,7 +348,6 @@ internal fun focusQuickActionsRailRows(
 internal fun railFitsActions(
     availableHeight: Dp,
     actionCount: Int,
-    gap: Dp,
 ): Boolean {
     if (actionCount == 0) return true
 

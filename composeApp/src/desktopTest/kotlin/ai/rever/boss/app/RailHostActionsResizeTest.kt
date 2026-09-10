@@ -73,9 +73,9 @@ class RailHostActionsResizeTest {
 
     @Test
     fun `fit includes the fixed offset for all five actions`() {
-        assertTrue(railFitsActions(212.dp, 4, 4.dp))
-        assertFalse(railFitsActions(211.dp, 4, 4.dp))
-        assertFalse(railFitsActions(243.dp, 5, 4.dp))
-        assertTrue(railFitsActions(244.dp, 5, 4.dp))
+        assertTrue(railFitsActions(212.dp, 4))
+        assertFalse(railFitsActions(211.dp, 4))
+        assertFalse(railFitsActions(243.dp, 5))
+        assertTrue(railFitsActions(244.dp, 5))
     }
 }

@@ -17,7 +17,7 @@ internal fun MeasuredRailHostActions(
     onFitsChange: (Boolean) -> Unit,
 ) {
     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-        val fits = railFitsActions(maxHeight, actions.filterNotNull().size, BossTheme.space.xs)
+        val fits = railFitsActions(maxHeight, actions.filterNotNull().size)
         val report by rememberUpdatedState(onFitsChange)
         LaunchedEffect(fits) { report(fits) }
         if (showActions && fits) VerticalBarRailActions(actions)

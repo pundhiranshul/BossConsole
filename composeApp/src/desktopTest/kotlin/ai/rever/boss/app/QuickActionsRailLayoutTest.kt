@@ -103,7 +103,6 @@ class QuickActionsRailLayoutTest {
             railFitsActions(
                 availableHeight = 212.dp,
                 actionCount = 4,
-                gap = 4.dp,
             ),
         )
     }
@@ -114,7 +113,6 @@ class QuickActionsRailLayoutTest {
             !railFitsActions(
                 availableHeight = 211.dp,
                 actionCount = 4,
-                gap = 4.dp,
             ),
         )
     }
@@ -125,7 +123,6 @@ class QuickActionsRailLayoutTest {
             railFitsActions(
                 availableHeight = 0.dp,
                 actionCount = 0,
-                gap = 4.dp,
             ),
         )
     }
