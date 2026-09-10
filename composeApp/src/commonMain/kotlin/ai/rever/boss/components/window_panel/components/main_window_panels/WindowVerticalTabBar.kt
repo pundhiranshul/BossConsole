@@ -498,9 +498,9 @@ private fun ExpandedGroups(
             tabDragComponent = tabDragComponent,
         )
 
-        // 10.dp (rather than 11.dp) compensates for a 1.dp optical alignment difference
-        // between the collapsed rail's internal structure and the expanded drawer's structure,
-        // so the expanded New Tab row coincides perfectly with the rail's '+' button during the transition.
+        // 10.dp (rather than 11.dp) compensates for the 1.dp height of the Divider drawn at
+        // the end of WindowTabBarFavorites, which pushes this content down sequentially.
+        // This ensures the expanded New Tab row perfectly coincides with the rail's '+' button.
         Spacer(Modifier.height(10.dp))
 
         BossVerticalTabStrip(
