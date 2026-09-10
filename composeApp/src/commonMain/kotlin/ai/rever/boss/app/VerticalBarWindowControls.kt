@@ -442,8 +442,6 @@ internal fun LogoutFullRow(
 ) {
     val currentUser by AuthService.currentUser.collectAsState()
     val source = interactionSource ?: remember { MutableInteractionSource() }
-    val isHovered by source.collectIsHoveredAsState()
-    val isFocused by source.collectIsFocusedAsState()
     val colors = BossTheme.colors
 
     val marginStart = (BossChrome.dimens.stripWidth - 32.dp) / 2
@@ -455,25 +453,15 @@ internal fun LogoutFullRow(
             .padding(start = marginStart, end = BossTheme.space.xs),
     ) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(4.dp))
-                    .hoverable(source)
-                    .background(if (isHovered || isFocused) colors.raised else Color.Transparent)
-                    .clickable(
-                        interactionSource = source,
-                        indication = LocalIndication.current,
-                        onClick = onSignOut,
-                    ),
+            modifier = Modifier.fillMaxSize(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
-                Icon(
+                BossActionButton(
                     imageVector = Icons.AutoMirrored.Outlined.Logout,
-                    contentDescription = "Sign Out",
-                    tint = colors.textSecondary,
-                    modifier = Modifier.size(16.dp),
+                    text = "Sign Out",
+                    interactionSource = source,
+                    onClick = onSignOut,
                 )
             }
             Spacer(Modifier.width(8.dp))
