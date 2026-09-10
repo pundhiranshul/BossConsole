@@ -352,9 +352,25 @@ internal fun railFitsActions(
 ): Boolean {
     if (actionCount == 0) return true
 
-    // The separator is a child too: there is a gap between it and the first action,
-    // plus one between each pair of actions and padding at both ends.
-    val actionsHeight = SIDEBAR_ICON_SIZE * actionCount + gap * (actionCount + 2) + 1.dp
+    // Heights match ActionIconColumnBody's conditional slot rendering (index order 0..4):
+    //   0: signOut  →  40dp Box (only rendered when non-null via ?.let)
+    //   1: settings  }  both share a 140dp group Box (rendered if either is non-null)
+    //   3: toolLauncher }
+    //   2: toolbox  →  32dp Box
+    //   4: search   →  32dp Box
+    //
+    // The caller passes actions.take(actionCount) where the list is ordered 0..4 above, so:
+    //   count=1: signOut(40) = 40dp
+    //   count=2: settings group(140) + signOut(40) = 180dp
+    //   count=3: toolbox(32) + group(140) + signOut(40) = 212dp
+    //   count=4: toolbox(32) + group(140, toolLauncher+settings) + signOut(40) = 212dp
+    //   count=5: search(32) + toolbox(32) + group(140) + signOut(40) = 244dp
+    val actionsHeight = when (actionCount) {
+        1 -> 40.dp
+        2 -> 180.dp
+        3, 4 -> 212.dp
+        else -> 244.dp
+    }
     return actionsHeight <= availableHeight
 }
 

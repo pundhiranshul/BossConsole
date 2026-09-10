@@ -3,8 +3,6 @@ package ai.rever.boss.window
 import ai.rever.boss.plugin.api.TabInfo
 import ai.rever.boss.plugin.logging.BossLogger
 import ai.rever.boss.plugin.logging.LogCategory
-import ai.rever.boss.plugin.logging.debug
-import ai.rever.boss.plugin.logging.warn
 import ai.rever.boss.plugin.window.Project
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.unit.dp
