@@ -1471,27 +1471,10 @@ internal class BrowserHandleImpl(
         subscriptions +=
             browser.on(BrowserClosed::class.java) {
                 logger.debug(LogCategory.BROWSER, "Browser closed", mapOf("handleId" to id))
-                audioSource.close()
-                disposed.set(true)
-                pageInjection.onGone()
-                nativeDisposal.start()
-                // Stop streaming: the underlying page is gone.
-                coBrowseCapturing = false
-                coBrowseSink = null
-                coBrowseBridge.onEvent = null
-                // Same for the page event channel. dispose() clears this too, but a browser can
-                // close without one (a crashed renderer, an engine recycle), and a sink still
-                // pointing at a plugin is the half that matters.
-                pageEventScript = null
-                pageEventBridge.onEvent = null
-                pageEventBridge.urlProvider = { "" }
-                // And drop the injectors HERE, not only in dispose(). This handler sets
-                // disposed = true, and dispose() returns on its first line when that is already
-                // set - so for a browser that closed on its own (crashed renderer, engine recycle)
-                // dispose() never reaches its unregister call, and the entry pins this handle for
-                // the rest of the session. That is the leak the unregister was added to fix,
-                // arriving through the one path that skips it.
-                BrowserInjectDispatcher.unregister(browser)
+                // A browser can close without a dispose() call (a crashed renderer, an engine recycle).
+                // Call dispose() here to ensure all scopes are cancelled and the handle is unregistered.
+                // It is idempotent, so a dispose() from the UI will safely no-op.
+                this@BrowserHandleImpl.dispose()
             }
     }
 
