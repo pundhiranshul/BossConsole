@@ -19,6 +19,7 @@ import ai.rever.boss.components.dialogs.TopOfMindDialog
 import ai.rever.boss.components.events.DashboardEventBus
 import ai.rever.boss.components.events.FileEventBus
 import ai.rever.boss.components.events.PanelEventBus
+import ai.rever.boss.components.events.TabEventBus
 import ai.rever.boss.components.plugin.DependentRestartDeclinedException
 import ai.rever.boss.components.plugin.DependentRestartDialog
 import ai.rever.boss.components.plugin.DynamicPluginManager
@@ -527,6 +528,11 @@ internal fun BossAppDialogs(state: BossAppState) {
                     coroutineScope.launch {
                         delay(100)
                         splitViewState.selectTabInPanel(tabId, panelId)
+                    }
+                } else {
+                    WindowOperations.focusWindow(targetWindowId)
+                    coroutineScope.launch {
+                        TabEventBus.selectTab(targetWindowId, panelId, tabId)
                     }
                 }
                 state.focusRequester.requestFocus()

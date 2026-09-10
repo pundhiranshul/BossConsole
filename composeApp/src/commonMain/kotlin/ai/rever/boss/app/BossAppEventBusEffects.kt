@@ -10,6 +10,7 @@ import ai.rever.boss.components.events.NavigationTargetBus
 import ai.rever.boss.components.events.PanelEventBus
 import ai.rever.boss.components.events.RunEventBus
 import ai.rever.boss.components.events.RunnerTerminalEventBus
+import ai.rever.boss.components.events.TabEventBus
 import ai.rever.boss.components.events.TerminalEventBus
 import ai.rever.boss.components.events.TerminalLinkEventBus
 import ai.rever.boss.components.events.URLEventBus
@@ -60,6 +61,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -93,6 +95,17 @@ internal fun BossAppEventBusEffects(state: BossAppState) {
                 if (event.line > 0) {
                     NavigationTargetBus.navigateTo(event.filePath, event.line, event.column, sourceWindowId = windowId)
                 }
+            }.launchIn(this)
+    }
+
+    // Listen for tab selection events from other windows
+    LaunchedEffect(splitViewState, windowId) {
+        TabEventBus.tabSelectEvents
+            .filter { event -> event.targetWindowId == windowId }
+            .onEach { event ->
+                // Small delay to ensure the window has time to come to front if needed
+                delay(50)
+                splitViewState.selectTabInPanel(event.tabId, event.panelId)
             }.launchIn(this)
     }
 
