@@ -365,12 +365,13 @@ internal fun railFitsActions(
     //   count=3: toolbox(32) + group(140) + signOut(40) = 212dp
     //   count=4: toolbox(32) + group(140, toolLauncher+settings) + signOut(40) = 212dp
     //   count=5: search(32) + toolbox(32) + group(140) + signOut(40) = 244dp
-    val actionsHeight = when (actionCount) {
-        1 -> 40.dp
-        2 -> 180.dp
-        3, 4 -> 212.dp
-        else -> 244.dp
-    }
+    val actionsHeight =
+        when (actionCount) {
+            1 -> 40.dp
+            2 -> 180.dp
+            3, 4 -> 212.dp
+            else -> 244.dp
+        }
     return actionsHeight <= availableHeight
 }
 
