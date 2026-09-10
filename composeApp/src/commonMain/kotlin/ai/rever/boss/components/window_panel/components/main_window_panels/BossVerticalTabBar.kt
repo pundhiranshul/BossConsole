@@ -49,13 +49,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.constrainHeight
+import androidx.compose.ui.unit.constrainWidth
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -190,12 +191,7 @@ fun BossTabRail(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(Modifier.fillMaxWidth()) {
-            // Invisible block to compute and reserve the EXACT height of the Drawer's Favorites card.
-            // Using pointerInput(Unit) {} to guarantee no click-throughs or hover effects trigger
-            // on the invisible layout.
-            Box(Modifier.alpha(0f).pointerInput(Unit) {}) {
-                favoritesSpacer()
-            }
+            MeasureFavoritesShelf(favoritesSpacer)
 
             // Visible Chevron, positioned identically to how it sits in the Drawer
             Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -394,3 +390,15 @@ fun verticalTabBarWidth(
     collapsed: Boolean,
     width: Dp,
 ): Dp = if (collapsed) tabBarRailWidth else width
+
+/** Reserves the shelf height without placing invisible bookmark buttons into hit testing. */
+@Composable
+private fun MeasureFavoritesShelf(content: @Composable () -> Unit) {
+    Layout(content = content) { measurables, constraints ->
+        val measured = measurables.map { it.measure(constraints) }
+        layout(
+            constraints.constrainWidth(measured.maxOfOrNull { it.width } ?: 0),
+            constraints.constrainHeight(measured.maxOfOrNull { it.height } ?: 0),
+        ) {}
+    }
+}

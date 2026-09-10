@@ -340,7 +340,6 @@ private fun ActionIconColumnBody(
         verticalArrangement = Arrangement.Bottom,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-
         Box(Modifier.height(32.dp), contentAlignment = Alignment.Center) { search?.invoke() }
         Box(Modifier.height(32.dp), contentAlignment = Alignment.Center) { toolbox?.invoke() }
         Box(Modifier.height(140.dp), contentAlignment = Alignment.Center) {

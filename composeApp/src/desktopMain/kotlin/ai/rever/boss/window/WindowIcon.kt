@@ -2,7 +2,6 @@ package ai.rever.boss.window
 
 import ai.rever.boss.plugin.logging.BossLogger
 import ai.rever.boss.plugin.logging.LogCategory
-import ai.rever.boss.plugin.logging.warn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.graphics.painter.BitmapPainter
