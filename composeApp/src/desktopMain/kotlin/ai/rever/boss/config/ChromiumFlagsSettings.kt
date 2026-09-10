@@ -256,7 +256,9 @@ object ChromiumFlagsSettingsManager {
     // Blank reads as UNSET. `FOO= boss` exports an empty string, which is non-null, so a bare
     // getenv let an empty variable claim ownership of a key and silently suppress the user's
     // setting - reported in the UI as an override with no value to show.
-    fun envOverride(key: String): String? = System.getenv(key)?.takeIf { it.isNotBlank() }
+    internal var envReader: (String) -> String? = System::getenv
+
+    fun envOverride(key: String): String? = envReader(key)?.takeIf { it.isNotBlank() }
 
     /**
      * What [key] would resolve to on the next launch given [settings] — **env first,

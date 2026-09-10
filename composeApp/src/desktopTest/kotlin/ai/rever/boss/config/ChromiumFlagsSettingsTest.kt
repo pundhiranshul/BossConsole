@@ -362,26 +362,42 @@ class ChromiumFlagsSettingsTest {
 
     @Test
     fun `previewValue puts the environment ahead of the setting`() {
-        // The precedence the whole screen rests on, and the rule the command-line preview has to
-        // reproduce or it reports a next launch that will not happen.
-        val settings = ChromiumFlagsSettings(renderingMode = "OFF_SCREEN")
-        // No env var is set for this key in a test JVM, so the setting shows through.
-        assertEquals(
-            "OFF_SCREEN",
-            ChromiumFlagsSettingsManager.previewValue(settings, ChromiumFlagKeys.RENDERING_MODE),
-        )
-        // A key with no setting and no env resolves to nothing rather than to a guess.
-        assertNull(ChromiumFlagsSettingsManager.previewValue(ChromiumFlagsSettings(), ChromiumFlagKeys.RENDERING_MODE))
-        // And it never consults system properties, which hold THIS process's published boot
-        // values — reading them would make the preview echo the running session back at the user
-        // instead of showing what they just chose.
-        System.setProperty(ChromiumFlagKeys.SKIKO_RENDER_API, "METAL")
+        val originalReader = ChromiumFlagsSettingsManager.envReader
         try {
-            assertNull(
-                ChromiumFlagsSettingsManager.previewValue(ChromiumFlagsSettings(), ChromiumFlagKeys.SKIKO_RENDER_API),
+            // Isolate from local environment pollution (e.g. BOSS_RENDERING_MODE="OFF_SCREEN")
+            ChromiumFlagsSettingsManager.envReader = { null }
+
+            // The precedence the whole screen rests on, and the rule the command-line preview has to
+            // reproduce or it reports a next launch that will not happen.
+            val settings = ChromiumFlagsSettings(renderingMode = "OFF_SCREEN")
+            // No env var is set for this key in a test JVM, so the setting shows through.
+            assertEquals(
+                "OFF_SCREEN",
+                ChromiumFlagsSettingsManager.previewValue(settings, ChromiumFlagKeys.RENDERING_MODE),
             )
+            // A key with no setting and no env resolves to nothing rather than to a guess.
+            assertNull(
+                ChromiumFlagsSettingsManager.previewValue(
+                    ChromiumFlagsSettings(),
+                    ChromiumFlagKeys.RENDERING_MODE,
+                ),
+            )
+            // And it never consults system properties, which hold THIS process's published boot
+            // values — reading them would make the preview echo the running session back at the user
+            // instead of showing what they just chose.
+            System.setProperty(ChromiumFlagKeys.SKIKO_RENDER_API, "METAL")
+            try {
+                assertNull(
+                    ChromiumFlagsSettingsManager.previewValue(
+                        ChromiumFlagsSettings(),
+                        ChromiumFlagKeys.SKIKO_RENDER_API,
+                    ),
+                )
+            } finally {
+                System.clearProperty(ChromiumFlagKeys.SKIKO_RENDER_API)
+            }
         } finally {
-            System.clearProperty(ChromiumFlagKeys.SKIKO_RENDER_API)
+            ChromiumFlagsSettingsManager.envReader = originalReader
         }
     }
 }
