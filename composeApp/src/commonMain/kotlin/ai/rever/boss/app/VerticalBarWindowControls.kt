@@ -336,19 +336,25 @@ private fun ActionIconColumnBody(
     val search = actions.getOrNull(4)
 
     Column(
-        modifier = modifier.fillMaxWidth().fillMaxHeight(),
-        verticalArrangement = Arrangement.Bottom,
+        modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(Modifier.height(32.dp), contentAlignment = Alignment.Center) { search?.invoke() }
-        Box(Modifier.height(32.dp), contentAlignment = Alignment.Center) { toolbox?.invoke() }
-        Box(Modifier.height(140.dp), contentAlignment = Alignment.Center) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(BossTheme.space.xs),
-            ) {
-                toolLauncher?.invoke()
-                settings?.invoke()
+        if (search != null) {
+            Box(Modifier.height(32.dp), contentAlignment = Alignment.Center) { search.invoke() }
+        }
+        if (toolbox != null) {
+            Box(Modifier.height(32.dp), contentAlignment = Alignment.Center) { toolbox.invoke() }
+        }
+        val hasSettingsGroup = toolLauncher != null || settings != null
+        if (hasSettingsGroup) {
+            Box(Modifier.height(140.dp), contentAlignment = Alignment.Center) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(BossTheme.space.xs),
+                ) {
+                    toolLauncher?.invoke()
+                    settings?.invoke()
+                }
             }
         }
         signOut?.let { Box(Modifier.height(40.dp), contentAlignment = Alignment.Center) { it.invoke() } }
