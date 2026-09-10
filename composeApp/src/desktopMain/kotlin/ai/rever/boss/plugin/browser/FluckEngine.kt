@@ -3261,64 +3261,98 @@ object FluckEngine {
                         return@StartDownloadCallback
                     }
 
+                    val proceedWithDownload = {
+                        // Start the download
+                        val downloadPath = Paths.get(savePath)
+
+                        // Update last used directory
+                        val parentDir = downloadPath.parent?.toString()
+                        if (parentDir != null) {
+                            downloadSettings = downloadSettings.copy(lastUsedDirectory = parentDir)
+                        }
+
+                        // Add download to manager immediately and open Downloads panel
+                        CoroutineScope(Dispatchers.Default).launch {
+                            downloadManager.addDownload(
+                                DownloadItem(
+                                    id = downloadId,
+                                    fileName = savedFileName,
+                                    destinationPath = savePath,
+                                    url = target.url(),
+                                    mimeType = target.mimeType().toString(),
+                                    status = DownloadStatus.DOWNLOADING,
+                                    receivedBytes = 0,
+                                    totalBytes = null,
+                                    speed = 0.0,
+                                    startedAt = System.currentTimeMillis(),
+                                    finishedAt = null,
+                                    canPause = false,
+                                    canResume = false,
+                                    errorReason = null,
+                                ),
+                            )
+
+                            // Open the Downloads sidebar panel. Same reasoning as the
+                            // deep-link handlers: a download can start while BOSS does
+                            // not hold OS focus, so focusedWindowFlow alone would drop
+                            // the panel open even though a usable window is registered.
+                            val targetWindowId = WindowFocusManager.resolveActionableWindowId()
+                            if (targetWindowId != null) {
+                                ai.rever.boss.components.events.PanelEventBus.openPanel(
+                                    ai.rever.boss.components.plugin.PanelIds.DOWNLOADS,
+                                    sourceWindowId = targetWindowId,
+                                )
+                            } else {
+                                logger.warn(LogCategory.UI, "No usable window registered, cannot open Downloads panel")
+                            }
+                        }
+
+                        // Register event listeners on the download object
+                        val downloadObj = download
+                        setupDownloadEventListeners(downloadObj, downloadId, savePath, target.url())
+
+                        // Initiate the download
+                        action.download(downloadPath)
+                    }
+
                     // Warn for executable files
                     if (downloadSettings.warnForExecutables &&
                         FileNameSanitizer.isExecutableFile(sanitizedFileName)
                     ) {
-                        // TODO: Show user warning dialog (for now, just proceed)
-                    }
+                        CoroutineScope(Dispatchers.Default).launch {
+                            val proceed =
+                                try {
+                                    ai.rever.boss.components.plugin.providers.GenericDialogProviderImpl
+                                        .getInstance()
+                                        .showConfirmationDialog(
+                                            title = "Security Warning",
+                                            message =
+                                                "This file ($sanitizedFileName) is an executable " +
+                                                    "program.\n\nAre you sure you want to download it?",
+                                            confirmText = "Download",
+                                            cancelText = "Cancel",
+                                            isDestructive = true,
+                                        )
+                                } catch (e: Exception) {
+                                    logger.warn(
+                                        ai.rever.boss.utils.logging.LogCategory.BROWSER,
+                                        "Error showing executable warning dialog",
+                                        error = e,
+                                    )
+                                    false
+                                }
 
-                    // Start the download
-                    val downloadPath = Paths.get(savePath)
-
-                    // Update last used directory
-                    val parentDir = downloadPath.parent?.toString()
-                    if (parentDir != null) {
-                        downloadSettings = downloadSettings.copy(lastUsedDirectory = parentDir)
-                    }
-
-                    // Add download to manager immediately and open Downloads panel
-                    CoroutineScope(Dispatchers.Default).launch {
-                        downloadManager.addDownload(
-                            DownloadItem(
-                                id = downloadId,
-                                fileName = savedFileName,
-                                destinationPath = savePath,
-                                url = target.url(),
-                                mimeType = target.mimeType().toString(),
-                                status = DownloadStatus.DOWNLOADING,
-                                receivedBytes = 0,
-                                totalBytes = null,
-                                speed = 0.0,
-                                startedAt = System.currentTimeMillis(),
-                                finishedAt = null,
-                                canPause = false,
-                                canResume = false,
-                                errorReason = null,
-                            ),
-                        )
-
-                        // Open the Downloads sidebar panel. Same reasoning as the
-                        // deep-link handlers: a download can start while BOSS does
-                        // not hold OS focus, so focusedWindowFlow alone would drop
-                        // the panel open even though a usable window is registered.
-                        val targetWindowId = WindowFocusManager.resolveActionableWindowId()
-                        if (targetWindowId != null) {
-                            ai.rever.boss.components.events.PanelEventBus.openPanel(
-                                ai.rever.boss.components.plugin.PanelIds.DOWNLOADS,
-                                sourceWindowId = targetWindowId,
-                            )
-                        } else {
-                            logger.warn(LogCategory.UI, "No usable window registered, cannot open Downloads panel")
+                            if (proceed) {
+                                proceedWithDownload()
+                            } else {
+                                FileSystemUtils.releaseFilePath(savePath, owner = downloadId)
+                                action.cancel()
+                            }
                         }
+                        return@StartDownloadCallback
                     }
 
-                    // Register event listeners on the download object
-                    val downloadObj = download
-                    setupDownloadEventListeners(downloadObj, downloadId, savePath, target.url())
-
-                    // Initiate the download
-                    action.download(downloadPath)
+                    proceedWithDownload()
                 } else {
                     // User cancelled save dialog
                     action.cancel()
