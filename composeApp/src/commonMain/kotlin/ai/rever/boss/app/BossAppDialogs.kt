@@ -531,9 +531,18 @@ internal fun BossAppDialogs(state: BossAppState) {
                         splitViewState.selectTabInPanel(tabId, panelId)
                     }
                 } else {
-                    WindowFocusManager.focusWindow(targetWindowId)
-                    coroutineScope.launch {
-                        TabEventBus.selectTab(targetWindowId, panelId, tabId)
+                    // Returns false when the window closed while the dialog was open. The bus
+                    // has no replay, so an emit then would go nowhere - log it instead.
+                    if (WindowFocusManager.focusWindow(targetWindowId)) {
+                        coroutineScope.launch {
+                            TabEventBus.selectTab(targetWindowId, panelId, tabId, sourceWindowId = windowId)
+                        }
+                    } else {
+                        logger.warn(
+                            LogCategory.UI,
+                            "Cross-window tab select dropped: target window is no longer open",
+                            mapOf("targetWindowId" to targetWindowId, "tabId" to tabId),
+                        )
                     }
                 }
                 state.focusRequester.requestFocus()

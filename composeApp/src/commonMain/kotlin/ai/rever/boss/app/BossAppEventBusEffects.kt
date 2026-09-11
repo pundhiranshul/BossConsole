@@ -72,6 +72,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
+ * Pause before applying a tab selection received from another window. UX grace, not a
+ * correctness barrier - see the comment at the call site.
+ */
+private const val TAB_SELECT_FOCUS_GRACE_MS = 50L
+
+/**
  * Event-bus listeners for one BossApp window. Every bus is window-filtered by
  * sourceWindowId (Issues #498/#506) so events only affect the window they came
  * from. Handlers translate bus events into split-view / panel / dialog actions.
@@ -98,13 +104,16 @@ internal fun BossAppEventBusEffects(state: BossAppState) {
             }.launchIn(this)
     }
 
-    // Listen for tab selection events from other windows
+    // Listen for tab selection events from other windows (destination-addressed, unlike the
+    // source-addressed buses above)
     LaunchedEffect(splitViewState, windowId) {
         TabEventBus.tabSelectEvents
             .filter { event -> event.targetWindowId == windowId }
             .onEach { event ->
-                // Small delay to ensure the window has time to come to front if needed
-                delay(50)
+                // UX grace, not correctness: selectTabInPanel below is a pure state mutation
+                // and this window is already composed. The pause only lets the focused
+                // window's UI come to the front before the tab switches underneath it.
+                delay(TAB_SELECT_FOCUS_GRACE_MS)
                 splitViewState.selectTabInPanel(event.tabId, event.panelId)
             }.launchIn(this)
     }
