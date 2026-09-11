@@ -13,8 +13,8 @@ import kotlin.test.assertNull
 
 /**
  * Cross-window tab selection reaches the target window through [TabEventBus.tabSelectEvents],
- * so the bus carries the three properties the window's effect relies on: it is addressed to ONE
- * window (targetWindowId + panelId + tabId), and it never replays.
+ * so the bus carries the two properties the window's effect relies on: it is addressed to
+ * exactly one window (via targetWindowId + panelId + tabId), and it never replays.
  *
  * These tests pin the bus contract itself. The window filter that ships in
  * `BossAppEventBusEffects` (`.filter { it.targetWindowId == windowId }`) is not exercised

@@ -23,10 +23,16 @@ data class TabSelectEvent(
 /**
  * Event bus for tab-related events.
  *
- * [selectTab] is the inverse of this file's twelve sibling buses: those are source-addressed
+ * [selectTab] is the inverse of its twelve sibling buses: those are source-addressed
  * (handled by the originating window via `sourceWindowId`), while a tab selection is
  * destination-addressed - [TabSelectEvent.targetWindowId] names the window that should act,
  * and the originating window travels as the envelope's source window.
+ *
+ * Cross-process consequence: a kernel-mode subscriber must not set
+ * `SubscribeRequest.sourceWindowId` to its own window id - the envelope's source is the
+ * originating (searching) window, so the `EventBusServiceImpl` window filter would drop
+ * exactly the selections addressed to the subscriber. Subscribe unfiltered and route on
+ * the payload's `targetWindowId` instead.
  */
 object TabEventBus {
     /** Optional IPC bridge for forwarding events cross-process in kernel mode. */

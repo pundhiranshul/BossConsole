@@ -80,7 +80,9 @@ private const val TAB_SELECT_FOCUS_GRACE_MS = 50L
 /**
  * Event-bus listeners for one BossApp window. Every bus is window-filtered by
  * sourceWindowId (Issues #498/#506) so events only affect the window they came
- * from. Handlers translate bus events into split-view / panel / dialog actions.
+ * from - except [TabEventBus], which is destination-addressed and filtered on
+ * the target window instead (see its listener below). Handlers translate bus
+ * events into split-view / panel / dialog actions.
  */
 @Composable
 internal fun BossAppEventBusEffects(state: BossAppState) {
