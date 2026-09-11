@@ -163,6 +163,16 @@ object ChromiumFlagsSettingsManager {
             field = value
             lastPersisted = null
         }
+
+    // `internal var` purely so tests can stub the environment - a JVM cannot set its own
+    // environment variables, and one exported BOSS_* variable would otherwise leak into every
+    // test that reads envOverride. Production never reassigns this; the default System::getenv
+    // is what runs in the field.
+    //
+    // Declared before `bootSettings = loadSync()` on purpose: object initialisers run in
+    // declaration order, so any initialiser below that reached envOverride would have read a
+    // not-yet-assigned envReader and died at object init before a logger could say why.
+    internal var envReader: (String) -> String? = System::getenv
     private val json =
         Json {
             prettyPrint = true
@@ -252,12 +262,11 @@ object ChromiumFlagsSettingsManager {
      * The environment's value for [key], or null. Used by the Settings UI to say a row
      * is overridden instead of letting it look broken. Reads the environment ONLY: a
      * system property here would report this object's own publication back to it.
+     *
+     * Blank reads as UNSET. `FOO= boss` exports an empty string, which is non-null, so a bare
+     * getenv let an empty variable claim ownership of a key and silently suppress the user's
+     * setting - reported in the UI as an override with no value to show.
      */
-    // Blank reads as UNSET. `FOO= boss` exports an empty string, which is non-null, so a bare
-    // getenv let an empty variable claim ownership of a key and silently suppress the user's
-    // setting - reported in the UI as an override with no value to show.
-    internal var envReader: (String) -> String? = System::getenv
-
     fun envOverride(key: String): String? = envReader(key)?.takeIf { it.isNotBlank() }
 
     /**

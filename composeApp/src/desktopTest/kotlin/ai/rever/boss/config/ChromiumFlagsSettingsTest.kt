@@ -296,9 +296,10 @@ class ChromiumFlagsSettingsTest {
 
     @Test
     fun `envOverride reads the environment only, never system properties`() {
-        // Renamed to what it actually pins. It cannot test blank - a JVM cannot set its own
-        // environment variables - and the previous name promised coverage that now genuinely
-        // lives in ConfigLoaderTest, where the pure resolver takes envValue as a parameter.
+        // Renamed to what it actually pins. The blank rule is no longer untestable - the
+        // envReader seam makes it so, and the previewValue test below pins it - and the
+        // environment-outranks-everything ordering lives in ConfigLoaderTest, where the pure
+        // resolver takes envValue as a parameter.
         // What IS worth pinning here: envOverride must not fall back to a system property, since
         // those hold this process's own published boot settings and reading them would make the
         // UI report the app's own setting as an environment override.
@@ -364,18 +365,40 @@ class ChromiumFlagsSettingsTest {
     fun `previewValue puts the environment ahead of the setting`() {
         val originalReader = ChromiumFlagsSettingsManager.envReader
         try {
-            // Isolate from local environment pollution (e.g. BOSS_RENDERING_MODE="OFF_SCREEN")
+            // The stubbed reader answers null, so the setting shows through instead of whatever
+            // BOSS_* variables happen to be exported on the machine running the test.
             ChromiumFlagsSettingsManager.envReader = { null }
 
             // The precedence the whole screen rests on, and the rule the command-line preview has to
             // reproduce or it reports a next launch that will not happen.
             val settings = ChromiumFlagsSettings(renderingMode = "OFF_SCREEN")
-            // No env var is set for this key in a test JVM, so the setting shows through.
             assertEquals(
                 "OFF_SCREEN",
                 ChromiumFlagsSettingsManager.previewValue(settings, ChromiumFlagKeys.RENDERING_MODE),
             )
+            // The case the name promises: with an exported variable the environment outranks the
+            // setting, exactly as the next launch resolves it. Without the seam a JVM could not
+            // test this half at all.
+            ChromiumFlagsSettingsManager.envReader = { "HARDWARE_ACCELERATED" }
+            assertEquals(
+                "HARDWARE_ACCELERATED",
+                ChromiumFlagsSettingsManager.previewValue(settings, ChromiumFlagKeys.RENDERING_MODE),
+                "an exported variable must outrank the setting, as the next launch will",
+            )
+            // Blank reads as UNSET (envOverride's isNotBlank guard): a `FOO=`-style export must
+            // not claim the key, so the setting shows through again.
+            ChromiumFlagsSettingsManager.envReader = { "   " }
+            assertEquals(
+                "OFF_SCREEN",
+                ChromiumFlagsSettingsManager.previewValue(settings, ChromiumFlagKeys.RENDERING_MODE),
+                "a blank variable must not suppress the setting",
+            )
+            assertNull(
+                ChromiumFlagsSettingsManager.envOverride(ChromiumFlagKeys.RENDERING_MODE),
+                "a blank value must read as unset, not as an empty override",
+            )
             // A key with no setting and no env resolves to nothing rather than to a guess.
+            ChromiumFlagsSettingsManager.envReader = { null }
             assertNull(
                 ChromiumFlagsSettingsManager.previewValue(
                     ChromiumFlagsSettings(),
