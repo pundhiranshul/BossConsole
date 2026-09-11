@@ -1,7 +1,6 @@
 package ai.rever.boss.window
 
 import ai.rever.boss.plugin.api.TabInfo
-import ai.rever.boss.utils.WindowFocusManager
 import ai.rever.boss.utils.logging.BossLogger
 import ai.rever.boss.utils.logging.LogCategory
 import ai.rever.boss.window.Project
@@ -75,12 +74,4 @@ actual object WindowOperations {
     actual fun closeWindow(windowId: String) {
         WindowManager.closeWindow(windowId)
     }
-
-    /**
-     * Bring a specific window to front by its ID
-     *
-     * @param windowId The ID of the window to focus
-     * @return true if the window was found and focused, false otherwise
-     */
-    actual fun focusWindow(windowId: String): Boolean = WindowFocusManager.focusWindow(windowId)
 }

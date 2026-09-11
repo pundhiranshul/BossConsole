@@ -65,15 +65,4 @@ expect object WindowOperations {
      * @param windowId The window ID to close
      */
     fun closeWindow(windowId: String)
-
-    /**
-     * Bring a specific window to front by its ID
-     *
-     * On desktop: Focuses and brings the window to the front
-     * On mobile/web: May do nothing
-     *
-     * @param windowId The ID of the window to focus
-     * @return true if the window was found and focused, false otherwise
-     */
-    fun focusWindow(windowId: String): Boolean
 }

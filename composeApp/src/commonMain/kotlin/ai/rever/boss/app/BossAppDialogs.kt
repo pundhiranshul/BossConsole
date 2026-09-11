@@ -74,6 +74,7 @@ import ai.rever.boss.services.bookmarks.BookmarkAPIAccess
 import ai.rever.boss.settings.MICROKERNEL_MODE_CONFIRMATION_MESSAGE
 import ai.rever.boss.settings.MicrokernelModePreference
 import ai.rever.boss.terminal.TerminalLinkSettingsManager
+import ai.rever.boss.utils.WindowFocusManager
 import ai.rever.boss.utils.extractFileName
 import ai.rever.boss.utils.logging.LogCategory
 import ai.rever.boss.window.MenuActionsHandler
@@ -530,7 +531,7 @@ internal fun BossAppDialogs(state: BossAppState) {
                         splitViewState.selectTabInPanel(tabId, panelId)
                     }
                 } else {
-                    WindowOperations.focusWindow(targetWindowId)
+                    WindowFocusManager.focusWindow(targetWindowId)
                     coroutineScope.launch {
                         TabEventBus.selectTab(targetWindowId, panelId, tabId)
                     }
