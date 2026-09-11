@@ -62,6 +62,13 @@ class BrowserDisposalWiringTest {
             closed.contains("this@BrowserHandleImpl.dispose()"),
             "External close must route through the unified dispose path",
         )
+        // The leak's mechanism: an inline disposed.set(true) here made the later
+        // dispose() return on its first line, so its unregister and scope cancellations
+        // never ran for a browser that closed on its own.
+        assertFalse(
+            closed.contains("disposed.set(true)"),
+            "External close must not pre-set the disposed flag inline; that would make the unified dispose() a no-op",
+        )
     }
 
     @Test
