@@ -170,8 +170,9 @@ object ChromiumFlagsSettingsManager {
     // is what runs in the field.
     //
     // Declared before `bootSettings = loadSync()` on purpose: object initialisers run in
-    // declaration order, so any initialiser below that reached envOverride would have read a
-    // not-yet-assigned envReader and died at object init before a logger could say why.
+    // declaration order, so an initialiser above this line that reached envOverride would
+    // read a not-yet-assigned envReader and die at object init before a logger could say why.
+    // In the old layout this var sat below bootSettings, so the very first load ran first.
     internal var envReader: (String) -> String? = System::getenv
     private val json =
         Json {

@@ -304,13 +304,18 @@ class ChromiumFlagsSettingsTest {
         // those hold this process's own published boot settings and reading them would make the
         // UI report the app's own setting as an environment override.
         System.setProperty("BOSS_TEST_UNUSED_KEY", "ignored")
+        val originalReader = ChromiumFlagsSettingsManager.envReader
         try {
+            // Hermetic: the assertion must hold even on a machine that exports the exact key
+            // name, for the same reason this PR exists - by construction, not by convention.
+            ChromiumFlagsSettingsManager.envReader = { null }
             assertNull(
                 ChromiumFlagsSettingsManager.envOverride("BOSS_TEST_UNUSED_KEY"),
                 "a system property must not be reported as an environment override",
             )
         } finally {
             System.clearProperty("BOSS_TEST_UNUSED_KEY")
+            ChromiumFlagsSettingsManager.envReader = originalReader
         }
     }
 
