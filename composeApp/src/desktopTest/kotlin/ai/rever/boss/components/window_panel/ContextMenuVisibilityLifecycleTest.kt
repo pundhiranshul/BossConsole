@@ -1,3 +1,5 @@
+@file:Suppress("PackageNaming")
+
 package ai.rever.boss.components.window_panel
 
 import ai.rever.boss.components.buttons.ReportContextMenuVisibility
@@ -25,12 +27,13 @@ class ContextMenuVisibilityLifecycleTest {
             withContext(clock) {
                 val recomposer = Recomposer(coroutineContext)
                 val runner = launch { recomposer.runRecomposeAndApplyChanges() }
-                val frames = launch {
-                    while (isActive) {
-                        clock.sendFrame(System.nanoTime())
-                        delay(1)
+                val frames =
+                    launch {
+                        while (isActive) {
+                            clock.sendFrame(System.nanoTime())
+                            delay(1)
+                        }
                     }
-                }
                 val composition = Composition(NoNodes(), recomposer)
                 val open = mutableStateOf(false)
                 val present = mutableStateOf(true)
@@ -65,10 +68,27 @@ class ContextMenuVisibilityLifecycleTest {
         }
 
     private class NoNodes : AbstractApplier<Unit>(Unit) {
-        override fun insertTopDown(index: Int, instance: Unit) = Unit
-        override fun insertBottomUp(index: Int, instance: Unit) = Unit
-        override fun remove(index: Int, count: Int) = Unit
-        override fun move(from: Int, to: Int, count: Int) = Unit
+        override fun insertTopDown(
+            index: Int,
+            instance: Unit,
+        ) = Unit
+
+        override fun insertBottomUp(
+            index: Int,
+            instance: Unit,
+        ) = Unit
+
+        override fun remove(
+            index: Int,
+            count: Int,
+        ) = Unit
+
+        override fun move(
+            from: Int,
+            to: Int,
+            count: Int,
+        ) = Unit
+
         override fun onClear() = Unit
     }
 }
